@@ -1,5 +1,5 @@
 <script setup>
-import { ref,computed } from 'vue'
+import { ref, computed } from 'vue'
 const step = ref(1)
 const data = ref([
   {
@@ -8,6 +8,12 @@ const data = ref([
     fields: [
       { key: 'Name', value: '', type: 'input' },
       { key: 'Gender', value: '', type: 'radio', options: ['Male', 'Female', 'Other'] },
+      {
+        key: 'Pregnant', value: '', type: 'radio', options: ['Yes', 'No'], visible: {
+          key: 'Gender',
+          value: 'Female'
+        },
+      },
       { key: 'Languages', value: [], type: 'checkbox', options: ['JavaScript', 'Python', 'Java', 'C++'] },
     ],
     next: 2
@@ -23,13 +29,13 @@ const data = ref([
     next: 3
   },
   {
-    id:3,
+    id: 3,
     name: '意見回饋',
     fields: [
       { key: 'Feedback', value: '', type: 'textarea' }
     ],
     next: 0
-  }
+  },
 ])
 
 const currentStep = computed(() => {
@@ -40,27 +46,33 @@ const saveData = ref([]);
 
 const submitForm = () => {
 
-      if (currentStep.value.next !== 0) {
-        step.value = currentStep.value.next;
-      } else {
-        step.value = 0;
-        saveData.value = data.value.map(item => {
-          return item.fields.reduce((prev, curr) => {
-            return {
-           ...prev,
-              [curr.key]: curr.value
-            }
-          },{})
-        })
-        console.log('All Form Data:', saveData);
-      }
-    };
-
+  if (currentStep.value.next !== 0) {
+    step.value = currentStep.value.next;
+  } else {
+    step.value = 0;
+    saveData.value = data.value.map(item => {
+      return item.fields.reduce((prev, curr) => {
+        return {
+          ...prev,
+          [curr.key]: curr.value
+        }
+      }, {})
+    })
+    console.log('All Form Data:', saveData);
+  }
+};
+const showFields = (field,fields) => {
+  if (!field.visible) {
+    return true; // 沒有設置 visible 屬性，默認顯示
+  }
+  const { key, value } = field.visible;
+  return fields.some(f => f.key === key && f.value === value);
+};
 </script>
 
 <template>
-  <div v-if="step!=0" >
-    <div v-for="(field, index) in currentStep.fields" :key="index">
+  <div v-if="step != 0">
+    <div v-for="(field, index) in currentStep.fields" :key="index" v-show="showFields(field,currentStep.fields)">
       <label>{{ field.key }}</label>
       <template v-if="field.type === 'radio'">
         <div v-for="(option, optionIndex) in field.options" :key="optionIndex">
@@ -96,49 +108,55 @@ const submitForm = () => {
 </template>
 
 <style scoped>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
-  }
-  #app {
-    max-width: 600px;
-    margin: 20px auto;
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-  form {
-    display: grid;
-    gap: 10px;
-  }
-  label {
-    font-weight: bold;
-    text-align: left;
-  }
-  input[type="text"],
-  textarea {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
-  input[type="radio"],
-  input[type="checkbox"] {
-    margin-right: 5px;
-  }
-  button[type="submit"] {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  button[type="submit"]:hover {
-    background-color: #0056b3;
-  }
-</style>
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  max-width: 600px;
+  margin: 20px auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  font-weight: bold;
+  text-align: left;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+button[type="submit"] {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover {
+  background-color: #0056b3;
+}</style>
