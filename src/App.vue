@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed,nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import Multiselect from 'vue-multiselect'
 import Customeized from './Customized.vue'
 const step = ref(1)
@@ -7,6 +7,7 @@ const selectRef = ref(null);
 // option 可以是string也可以是object, string的話就會直接顯示label以及value, object的話會包含value以及contents陣列
 // visible 可以是string也可以是object, string的話就表示對應key欄位的value有值就會顯示, object的話就表示value必須符合key的value才會有值
 // 'key' or {visible: {key: 'key', value: 'value'}}
+// required 是 Boolean或Object, ex: {required: {key: true, value: true}}
 const data = ref([
   {
     id: 1,
@@ -18,24 +19,52 @@ const data = ref([
         value: '',
         type: 'medication',
         options: [
-          'Aspirin',
-          'Cocaine',
-          'Oxycodone',
+          {
+            id: 1,
+            label: 'Aspirin',
+          },
+          {
+            id: 2,
+            label: 'Paracetamol',
+          },
+          {
+            id: 3,
+            label: 'Cocaine',
+          },
+          {
+            id: 4,
+            label: 'Oxycodone',
+          }
         ],
         list: [],
-        extend:  {
+        extend: {
           key: 'For medication',
           label: 'For medication %medication. Are you regularly taking this medication?',
           value: '',
           type: 'radio',
-          options: ['Yes, I take it regularly.', 'No, I take it occasionally.', 'No, I take it as needed.', {
-            value: 'customized',
-            contents: [
-              {
-                key: 'discontinued', prefix: 'No, I have discontinued for', value: '', type: 'text', suffix: ' months.',
-              }
-            ]
-          }],
+          options: [
+            {
+              id: 1,
+              label: 'Yes, I take it regularly.'
+            },
+            {
+              id: 2,
+              label: 'No, I take it occasionally.'
+            },
+            {
+              id: 3,
+              label: 'No, I take it as needed.'
+            },
+            {
+              id: 4,
+              isCustomized: true,
+              contents: [
+                {
+                  key: 'discontinued', prefix: 'No, I have discontinued for', value: '', type: 'text', suffix: ' months.'
+                }
+              ]
+            }
+          ],
         },
       },
       {
@@ -43,9 +72,24 @@ const data = ref([
         label: 'Do you have any of the following symptoms?',
         value: {},
         type: 'true-false',
-        options: ['Burning urination (Dysuria)', 'Frequent urination', 'Intense urge to urinate', 'Intense urge to urinate', 'Flank (back) pain',
+        options: [{
+            id: 1,
+            label: 'Burning urination (Dysuria)'
+          },{
+            id: 2,
+            label: 'Frequent urination'
+          },
           {
-            value: 'customized',
+            id: 3,
+            label: 'Intense urge to urinate'
+          },
+          {
+            id: 4,
+            label: 'Flank (back) pain'
+          },
+          {
+            id: 5,
+            isCustomized: true,
             contents: [
               {
                 key: 'color', prefix: 'Genital discharge. Color:', value: '', type: 'text', suffix: ', ',
@@ -64,7 +108,8 @@ const data = ref([
         key: 'lastDiagnostic', label: 'Last diagnostic test:', value: '', type: 'radio',
         options: [
           {
-            value: 'customized',
+            id: 1,
+            isCustomized: true,
             contents: [
               {
                 key: 'test',
@@ -81,35 +126,19 @@ const data = ref([
               },
             ]
           },
-          'Not applicable.'
+          {
+            id: 2,
+            label: 'Not applicable.'
+          }
         ]
       },
     ],
-    next: 0
   },
-  // {
-  //   id: 2,
-  //   name: '聯絡方式',
-  //   fields: [
-  //     { key: 'Email', value: '', type: 'text' },
-  //     { key: 'Phone', value: '', type: 'text' },
-  //     { key: 'Address', value: '', type: 'textarea' }
-  //   ],
-  //   next: 3
-  // },
-  // {
-  //   id: 3,
-  //   name: '意見回饋',
-  //   fields: [
-  //     { key: 'Feedback', value: '', type: 'textarea' }
-  //   ],
-  //   next: 0
-  // },
 ])
 
-const isCustomized = (option) => {
-  return typeof option !== 'string'
-}
+// const isCustomized = (option) => {
+//   return typeof option !== 'string'
+// }
 
 const currentStep = computed(() => {
   return data.value[step.value - 1]
@@ -127,8 +156,8 @@ const __formatLabel = (label, name) => {
 
 const saveData = ref([]);
 
-const handleCreateMedication = async (value,index,extend)=>{
-  if(!value || currentStep.value.fields[index].list.some(item=>item.name === value)){
+const handleCreateMedication = async (value, index, extend) => {
+  if (!value || currentStep.value.fields[index].list.some(item => item.name === value.label)) {
     return
   }
   currentStep.value.fields[index].list.push({
@@ -142,8 +171,8 @@ const handleCreateMedication = async (value,index,extend)=>{
   await nextTick();
 }
 
-const handleSelectExtend = (m,e)=>{
-  console.log(m,e.target.value);
+const handleSelectExtend = (m, e) => {
+  console.log(m, e.target.value);
 }
 
 const submitForm = () => {
@@ -188,16 +217,17 @@ const showFields = (field, fields) => {
     </div>
     <div class="step-form">
       <div v-if="step != 0">
-        <div class="step-form__item" v-for="(field, index) in currentStep.fields" :key="index" v-show="showFields(field, currentStep.fields)">
-          <label>{{field.label}}</label>
+        <div class="step-form__item" v-for="(field, index) in currentStep.fields" :key="index"
+          v-show="showFields(field, currentStep.fields)">
+          <label>{{ field.label }}</label>
           <template v-if="field.type === 'radio'">
             <div v-for="(option, optionIndex) in field.options" :key="optionIndex">
               <label>
-                <input type="radio" :value="isCustomized(option) ? option.value : option" v-model="field.value" />
-                <template v-if="isCustomized(option)">
+                <input type="radio" :value="option.isCustomized ? option.value : option" v-model="field.value" />
+                <template v-if="option.isCustomized">
                   <Customeized :option="option" />
                 </template>
-                <span v-else>{{ option }}</span>
+                <span v-else>{{ option.label }}</span>
               </label>
             </div>
           </template>
@@ -223,16 +253,16 @@ const showFields = (field, fields) => {
                 <input type="radio" :value="false" v-model="field.value[index]">
                 N
               </label>
-              <template v-if="isCustomized(option)">
+              <template v-if="option.isCustomized">
                 <Customeized :option="option" />
               </template>
-              <span v-else>{{ option }}</span>
+              <span v-else>{{ option.label }}</span>
             </div>
           </template>
           <template v-else-if="field.type === 'medication'">
-            <select ref="selectRef" @change="e=>handleCreateMedication(e.target.value,index,field.extend)">
+            <select ref="selectRef" @change="e => handleCreateMedication(e.target.value, index, field.extend)">
               <option value="null"></option>
-              <option v-for="(option, optionIndex) in field.options" :key="optionIndex">{{ option }}</option>
+              <option v-for="(option, optionIndex) in field.options" :key="optionIndex">{{ option.label }}</option>
             </select>
             <template v-if="field.list.length">
               <div class="medication__item" v-for="(medication, inputIndex) in field.list" :key="inputIndex">
@@ -246,14 +276,14 @@ const showFields = (field, fields) => {
                   <label>Quantity</label>
                   <input type="text" class="blank" v-model="medication.quantity" />
                 </div>
-                <div class="bold my-4">{{ __formatLabel(medication.extend.label, medication.name)  }}</div>
+                <div class="bold my-4">{{ __formatLabel(medication.extend.label, medication.name) }}</div>
                 <div v-for="(option, optionIndex) in medication.extend.options" :key="optionIndex">
                   <label>
                     <input type="radio" :value="optionIndex" v-model="medication.extend.value" />
-                    <template v-if="isCustomized(option)">
+                    <template v-if="option.isCustomized">
                       <Customeized :option="option" />
                     </template>
-                    <span v-else>{{ option }}</span>
+                    <span v-else>{{ option.label }}</span>
                   </label>
                 </div>
               </div>
@@ -278,24 +308,27 @@ const showFields = (field, fields) => {
 </template>
 
 <style lang="scss" scoped>
-*{
+* {
   font-family: sans-serif;
 }
 
-.step-form__item{
+.step-form__item {
   >label {
     font-weight: bold;
     text-align: left;
     display: block;
     margin: 8px 0;
   }
-  select{
+
+  select {
     display: block;
   }
-  input[type="text"]{
+
+  input[type="text"] {
     display: block;
     border: 1px solid #ccc;
     padding: 4px;
+
     &.blank {
       display: inline;
       width: 100px;
@@ -308,7 +341,7 @@ const showFields = (field, fields) => {
 
 }
 
-.medication__item{
+.medication__item {
   padding: 12px 8px;
   border: 1px solid #ccc;
   margin-bottom: 12px;
@@ -339,17 +372,20 @@ button[type="submit"] {
 button[type="submit"]:hover {
   background-color: #0056b3;
 }
-.bold{
+
+.bold {
   font-weight: bold;
 }
 
-.flex{
+.flex {
   display: flex;
 }
-.step-list{
+
+.step-list {
   width: 20%;
 }
-.my-4{
+
+.my-4 {
   margin-bottom: 4px;
   margin-top: 4px;
 }
